@@ -29,7 +29,6 @@ export default function App() {
         <Links />
       </head>
       <body>
-        <div>Navbarr</div>
         <Outlet />
         <ScrollRestoration />
         <Scripts />
