@@ -3,6 +3,7 @@ import type { MetaFunction } from "@remix-run/node";
 import { signup } from "./signup";
 // import { logout } from "../functions/logout";
 import { send } from "./send";
+import { login } from "./login";
 import { clear } from "./clear";
 
 export const callFunction = (output, setArray, setPrefix, prefix) => {
@@ -63,7 +64,7 @@ const parsePropsString = (propsString) => {
 };
 
 const functionMap = {
-	// login: login,
+	login: login,
 	signup: signup,
 	// logout: logout,
 	send: send,
