@@ -1,16 +1,39 @@
 import { useState, useEffect, useRef } from "react";
 import { callFunction } from "~/helper/callFunction";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "~/firebase/firebase";
 
 const TerminalWrite = () => {
 	const [input, setInput] = useState("");
+	const [authUser, setAuthUser] = useState("username:~$ Person>");
 	const [array, setArray] = useState([]);
 	const [output, setOutput] = useState("");
 	const [commands, setCommands] = useState([]);
 	const [currentCommandIndex, setCurrentCommandIndex] = useState(-1);
 	const inputRef = useRef(null);
-
-	// const prefix = "username:~$ Person>";
 	const [prefix, setPrefix] = useState(["username:~$ Person>"]);
+
+	useEffect(() => {
+		onAuthStateChanged(auth, (user) => {
+			if (user) {
+				const uid = user.uid;
+				console.log("user is signed in", uid);
+        setAuthUser(user.email)
+
+				// User is signed in, see docs for a list of available properties
+				// https://firebase.google.com/docs/reference/js/auth.user
+				// ...
+			} else {
+				// User is signed out
+				console.log("user is signed out");
+        setAuthUser("username:~$ Person>")
+			}
+		});
+	}, []);
+useEffect(() => {
+  
+  setPrefix((prev) => [...prev, authUser]);
+},[authUser])
 
 	useEffect(() => {
 		if (output) {

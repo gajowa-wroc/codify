@@ -1,7 +1,6 @@
 import type { MetaFunction } from "@remix-run/node";
-// import { login } from "../functions/login";
 import { signup } from "./signup";
-// import { logout } from "../functions/logout";
+import { logout } from "./logout";
 import { send } from "./send";
 import { login } from "./login";
 import { clear } from "./clear";
@@ -26,7 +25,6 @@ export const callFunction = (output, setArray, setPrefix, prefix) => {
 		// Check if the function name exists in the function map
 		if (functionName in functionMap) {
 			const func = functionMap[functionName];
-			console.log("function:", func);
 			if (functionName === "send") {
 				func(propsString);
 			} else {
@@ -66,7 +64,7 @@ const parsePropsString = (propsString) => {
 const functionMap = {
 	login: login,
 	signup: signup,
-	// logout: logout,
+  logout: logout,
 	send: send,
 	clear: clear,
 };
