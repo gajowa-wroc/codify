@@ -5,16 +5,9 @@ import { send } from "./send";
 import { login } from "./login";
 import { clear } from "./clear";
 
-export const callFunction = (output, setArray, setPrefix, prefix) => {
+export const callFunction = (output, setArray, setPrefixArray, prefixArray) => {
 	if (output === "clear") {
-		clear(setArray, setPrefix, prefix);
-	}
-	if (output === "change") {
-		if (prefix[prefix.length - 1] === "changedVal") {
-			setPrefix((prev) => [...prev.slice(0, -1), "changedVal2"]);
-		} else {
-			setPrefix((prev) => [...prev.slice(0, -1), "changedVal"]);
-		}
+		clear(setArray, setPrefixArray, prefixArray);
 	}
 	const matches = output.match(/([a-zA-Z0-9_]+)\((.*)\)/);
 	if (matches) {
@@ -25,6 +18,7 @@ export const callFunction = (output, setArray, setPrefix, prefix) => {
 		// Check if the function name exists in the function map
 		if (functionName in functionMap) {
 			const func = functionMap[functionName];
+			console.log("function:", func);
 			if (functionName === "send") {
 				func(propsString);
 			} else {
@@ -64,7 +58,7 @@ const parsePropsString = (propsString) => {
 const functionMap = {
 	login: login,
 	signup: signup,
-  logout: logout,
+    logout: logout,
 	send: send,
 	clear: clear,
 };
