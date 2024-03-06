@@ -1,56 +1,77 @@
-import { useState, useEffect, useRef } from "react";
-import { callFunction } from "~/helper/callFunction";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "~/firebase/firebase";
+import { useState, useEffect, useRef, KeyboardEvent } from "react";
+import useFunctionCaller from "../hooks/callFunction";
+import useAuthStore from '../store/authStore';
 
 const TerminalWrite = () => {
-	const [input, setInput] = useState("");
-	const [authUser, setAuthUser] = useState("username:~$ Person>");
-	const [array, setArray] = useState([]);
-	const [output, setOutput] = useState("");
-	const [commands, setCommands] = useState([]);
-	const [currentCommandIndex, setCurrentCommandIndex] = useState(-1);
-	const inputRef = useRef(null);
-	const [prefix, setPrefix] = useState(["username:~$ Person>"]);
+	const inputRef = useRef<HTMLInputElement | null>(null);
+
+	//keyboard movements
+	const [commands, setCommands] = useState<string[]>([]);
+	const [currentCommandIndex, setCurrentCommandIndex] = useState<number>(-1);
+
+	const [input, setInput] = useState<string>("");
+	const [output, setOutput] = useState<string>("");
+
+	const [authUser, setAuthUser] = useState<string>("");
+
+	const [isSecondEffectFinished, setIsSecondEffectFinished] = useState<boolean>(true);
+
+	interface UpdatedLine {
+		girdi: string[];
+		cikti: string[];
+	}
+	const [line, setLine] = useState<UpdatedLine>({ girdi: [], cikti: [] });
+
+	const { user } = useAuthStore();
+	const { callFunction } = useFunctionCaller()
 
 	useEffect(() => {
-		onAuthStateChanged(auth, (user) => {
+		if (isSecondEffectFinished) {
 			if (user) {
-				const uid = user.uid;
-				console.log("user is signed in", uid);
-        setAuthUser(user.email)
+				setAuthUser(user?.email + ">")
 
-				// User is signed in, see docs for a list of available properties
-				// https://firebase.google.com/docs/reference/js/auth.user
-				// ...
+				const updatedLine = {
+					girdi: [...line.girdi, authUser.length ? authUser : user?.email + ">"],
+					cikti: [...line.cikti, output],
+				}
+				setLine((prevPrefixes) => ({
+					...prevPrefixes,
+					...updatedLine
+				}));
 			} else {
-				// User is signed out
-				console.log("user is signed out");
-        setAuthUser("username:~$ Person>")
+				setAuthUser("username:~$ Person>")
+				
+				const updatedLine = {
+					girdi: [...line.girdi, authUser.length ? authUser : "username:~$ Person>"],
+					cikti: [...line.cikti, output],
+				}
+				setLine((prevPrefixes) => ({
+					...prevPrefixes,
+					...updatedLine
+				}));
 			}
-		});
-	}, []);
-useEffect(() => {
-  
-  setPrefix((prev) => [...prev, authUser]);
-},[authUser])
+
+			setOutput("");
+			setIsSecondEffectFinished(false);
+
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [user, isSecondEffectFinished, authUser]);
 
 	useEffect(() => {
 		if (output) {
-			setArray((prev) => [...prev, output]);
-			callFunction(output, setArray, setPrefix, prefix);
-
-			setOutput("");
+			const callF = async () => {
+				await callFunction({ output, setIsSecondEffectFinished, line, setLine });
+			}
+			callF();
 		}
-	}, [output, prefix, array]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [output]);
 
-	const handleKeyDown = (e: any) => {
+	const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
 		if (e.key === "Enter") {
 			setOutput(input);
-			if (input !== "") {
-				setPrefix((prev) => [...prev, prefix[prefix.length - 1]]);
-			}
-			console.log(prefix);
+
 			setCommands((prevCommands) => [...prevCommands, input]);
 			setCurrentCommandIndex(commands.length + 1); // Reset the command index
 			setInput("");
@@ -65,6 +86,7 @@ useEffect(() => {
 					setCurrentCommandIndex(newIndex);
 				}
 			}
+			handleOuterDivClick()
 		} else if (e.key === "ArrowDown") {
 			if (
 				currentCommandIndex >= 0 &&
@@ -83,7 +105,7 @@ useEffect(() => {
 	const handleOuterDivClick = () => {
 		if (inputRef.current) {
 			// Use the existing input value
-			const inputValue = inputRef.current.value;
+			const inputValue = inputRef.current?.value;
 
 			// Set the cursor position to the end
 			inputRef.current.setSelectionRange(inputValue.length, inputValue.length);
@@ -94,26 +116,25 @@ useEffect(() => {
 	};
 
 	return (
-		<div
-			className="w-full h-full bg-black overflow-auto md:overflow-y-auto"
-			onClick={handleOuterDivClick}
+		// eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+		<div className="w-full h-full bg-black overflow-auto md:overflow-y-auto" onClick={handleOuterDivClick}
 		>
 			<div className="flex flex-col bg-black pl-2">
 				<p className="mt-2 ml-2">Codify version 1.0</p>
-				{Array.isArray(array) &&
-					array.map((item, idx) => (
+				{Array.isArray(line.girdi) &&
+					line.girdi.map((item, idx) => (
 						<div key={idx} className="flex flex-col pb-2">
 							<div className="flex items-center">
 								<span className=" ml-2 text-green-600 flex-shrink-0">
-									{prefix[idx]}
+									{item}
 								</span>
-								<span className="ml-2">{item}</span>
+								<span className="ml-2">{line.cikti[idx]}</span>
 							</div>
 						</div>
 					))}
-				<div className="flex items-center">
+				<div className="flex items-center bg-yellow-400">
 					<span className="text-green-600 ml-2" style={{ flexShrink: 0 }}>
-						{prefix[prefix.length - 1]}
+						{authUser}
 					</span>
 					<input
 						ref={inputRef}
